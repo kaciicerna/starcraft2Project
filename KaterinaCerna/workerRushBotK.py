@@ -74,16 +74,17 @@ class workerRushBotK(BotAI):
                 for factory in self.structures(UnitTypeId.FACTORY).ready.idle:
                     factory.train(UnitTypeId.SIEGETANK)
 
-            # Add Viking production for air defense
-            if self.structures(UnitTypeId.STARPORT).ready and self.can_afford(UnitTypeId.VIKING):
-                for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
-                    starport.train(UnitTypeId.VIKING)
+            # Add Viking and Medivac production for air and ground support
+            if self.structures(UnitTypeId.STARPORT).ready:
+                # Add Viking production for air defense and ground attack
+                if self.can_afford(UnitTypeId.VIKING):
+                    for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+                        starport.train(UnitTypeId.VIKING)
 
-            # Add Medivac production for support
-            if self.structures(UnitTypeId.STARPORT).ready and self.can_afford(UnitTypeId.MEDIVAC):
-                for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
-                    starport.train(UnitTypeId.MEDIVAC)
-            
+                # Add Medivac production for support and ground transport
+                if self.can_afford(UnitTypeId.MEDIVAC):
+                    for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+                        starport.train(UnitTypeId.MEDIVAC)
 
             # Útok s jednotkou Marine
             # Má-li bot více než 15 volných jednotek Marine, zaútočí na náhodnou nepřátelskou budovu nebo se přesune na jeho startovní pozici
@@ -101,12 +102,25 @@ class workerRushBotK(BotAI):
                     scv.gather(self.vespene_geyser.closest_to(command_center))
 
         # Útoková strategie s kombinací jednotek Marine, Marauder, Hellion a Siege Tank
-        if self.units(UnitTypeId.MARINE).amount > 5 and self.units(UnitTypeId.MARAUDER).amount > 2 and self.units(UnitTypeId.HELLION).amount > 2 and self.units(UnitTypeId.SIEGETANK).amount > 1:
+        if (
+            self.units(UnitTypeId.MARINE).amount > 5
+            and self.units(UnitTypeId.MARAUDER).amount > 2
+            and self.units(UnitTypeId.HELLION).amount > 2
+            and self.units(UnitTypeId.SIEGETANK).amount > 1
+            and self.units(UnitTypeId.VIKING).amount > 1 
+            and self.units(UnitTypeId.MEDIVAC).amount > 1
+        ):
             enemy_base = self.enemy_start_locations[0]
 
             # Sestaví skupinu útočných jednotek
-            attack_group = self.units(UnitTypeId.MARINE) | self.units(UnitTypeId.MARAUDER) | self.units(UnitTypeId.HELLION) | self.units(UnitTypeId.SIEGETANK)
-
+            attack_group = (
+                self.units(UnitTypeId.MARINE)
+                | self.units(UnitTypeId.MARAUDER)
+                | self.units(UnitTypeId.HELLION)
+                | self.units(UnitTypeId.SIEGETANK)
+                | self.units(UnitTypeId.VIKING)
+                | self.units(UnitTypeId.MEDIVAC)
+            )
             # Posun skupiny k nepřátelské základně
             for unit in attack_group:
                 unit.attack(enemy_base)
