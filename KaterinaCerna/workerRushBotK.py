@@ -10,6 +10,7 @@ from sc2.ids.unit_typeid import UnitTypeId
 class workerRushBotK(BotAI):
     NAME: str = "MarineRushBotK"
     RACE: Race = Race.Terran
+
     async def on_step(self, iteration: int):
         # Jestliže mám Command Center
         if self.townhalls:
@@ -27,7 +28,7 @@ class workerRushBotK(BotAI):
                     await self.build(
                         UnitTypeId.SUPPLYDEPOT,
                         near=command_center.position.towards(self.game_info.map_center, 8))
-            
+
         if self.tech_requirement_progress(UnitTypeId.REFINERY) == 1:
             # If we have less than 2 refineries and none are pending
             if self.structures(UnitTypeId.REFINERY).amount < 2 and not self.already_pending(UnitTypeId.REFINERY):
@@ -42,12 +43,12 @@ class workerRushBotK(BotAI):
             # Bot staví tak dlouho, dokud si může dovolit stavět Barracks a jejich počet je menší než 6
             if self.tech_requirement_progress(UnitTypeId.BARRACKS) == 1:
                 # Je jich méně než 6 nebo se již nějaké nestaví
-                if self.structures(UnitTypeId.BARRACKS).amount < 3:
+                if self.structures(UnitTypeId.BARRACKS).amount < 6:
                     if self.can_afford(UnitTypeId.BARRACKS) and not self.already_pending(UnitTypeId.BARRACKS):
                         await self.build(
                             UnitTypeId.BARRACKS,
                             near=command_center.position.towards(self.game_info.map_center, 8))
-            
+
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 # Je jich méně než 6 nebo se již nějaké nestaví
                 if self.structures(UnitTypeId.FACTORY).amount < 3:
@@ -73,6 +74,16 @@ class workerRushBotK(BotAI):
                 for factory in self.structures(UnitTypeId.FACTORY).ready.idle:
                     factory.train(UnitTypeId.SIEGETANK)
 
+            # Add Viking production for air defense
+            if self.structures(UnitTypeId.STARPORT).ready and self.can_afford(UnitTypeId.VIKING):
+                for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+                    starport.train(UnitTypeId.VIKING)
+
+            # Add Medivac production for support
+            if self.structures(UnitTypeId.STARPORT).ready and self.can_afford(UnitTypeId.MEDIVAC):
+                for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+                    starport.train(UnitTypeId.MEDIVAC)
+
             # Útok s jednotkou Marine
             # Má-li bot více než 15 volných jednotek Marine, zaútočí na náhodnou nepřátelskou budovu nebo se přesune na jeho startovní pozici
             idle_marines = self.units(UnitTypeId.MARINE).idle
@@ -88,6 +99,7 @@ class workerRushBotK(BotAI):
                 else:
                     scv.gather(self.vespene_geyser.closest_to(command_center))
 
+# Run the game
 run_game(maps.get("sc2-ai-cup-2022"), [
     Bot(Race.Terran, workerRushBotK()),
     Computer(Race.Terran, Difficulty.Medium)
