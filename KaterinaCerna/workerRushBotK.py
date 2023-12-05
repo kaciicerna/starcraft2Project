@@ -85,6 +85,7 @@ class workerRushBotK(BotAI):
                 )
                 print("Barracks under construction!")
 
+        # Přidávání Tech Labu na Barracks
         if self.tech_requirement_progress(UnitTypeId.BARRACKSTECHLAB) == 1:
             idle_barracks = self.structures(UnitTypeId.BARRACKS).ready.idle
             for barracks in idle_barracks:
@@ -211,7 +212,7 @@ class workerRushBotK(BotAI):
                 print(f"Marine attacking {target}")
 
         idle_marauders = self.units(UnitTypeId.MARAUDER).idle
-        if idle_marauders.amount > 5:
+        if idle_marauders.amount > 1:
             target = self.enemy_structures.random_or(
                 self.enemy_start_locations[0]
             ).position
@@ -230,7 +231,7 @@ class workerRushBotK(BotAI):
                 print(f"Siege Tank attacking {target}")
 
         idle_hellions = self.units(UnitTypeId.HELLION).idle
-        if idle_hellions.amount > 0:
+        if idle_hellions.amount > 1:
             target = self.enemy_structures.random_or(
                 self.enemy_start_locations[0]
             ).position
