@@ -6,7 +6,7 @@ from sc2.bot_ai import BotAI
 from sc2.ids.unit_typeid import UnitTypeId
 
 class workerRushBotK(BotAI):
-    NAME: str = "MarineRushBotK"
+    NAME: str = "WorkerRushBotK"
     RACE: Race = Race.Terran
 
     async def on_step(self, iteration: int):
@@ -85,6 +85,30 @@ class workerRushBotK(BotAI):
                 )
                 print("Barracks under construction!")
 
+        if self.tech_requirement_progress(UnitTypeId.BARRACKSTECHLAB) == 1:
+            idle_barracks = self.structures(UnitTypeId.BARRACKS).ready.idle
+            for barracks in idle_barracks:
+                if barracks.add_on_tag == 0:
+                    # Kontrola, zda si můžete dovolit stavbu Tech Labu
+                    if self.can_afford(UnitTypeId.BARRACKSTECHLAB):
+                        barracks.build(UnitTypeId.BARRACKSTECHLAB)
+                        print("Tech Lab under construction on Barracks")
+                        break
+
+            else:
+                if (
+                    self.can_afford(UnitTypeId.BARRACKS)
+                    and not self.already_pending(UnitTypeId.BARRACKS)
+                ):
+                    await self.build(
+                        UnitTypeId.BARRACKS,
+                        near=command_center.position.towards(
+                            self.game_info.map_center, 8
+                        ),
+                    )
+                    print("Barracks under construction!")
+
+
     async def build_factory(self):
         if (
             self.tech_requirement_progress(UnitTypeId.FACTORY) == 1
@@ -112,12 +136,12 @@ class workerRushBotK(BotAI):
                 barrack.train(UnitTypeId.MARINE)
 
     async def train_marauders(self):
-            if (
-                self.structures(UnitTypeId.BARRACKS)
-                and self.can_afford(UnitTypeId.MARAUDER)
-            ):
-                for barracks in self.structures(UnitTypeId.BARRACKS).idle:
-                    barracks.train(UnitTypeId.MARAUDER)
+        if (
+            self.structures(UnitTypeId.BARRACKS)
+            and self.can_afford(UnitTypeId.MARAUDER)
+        ):
+            for barracks in self.structures(UnitTypeId.BARRACKS).idle:
+                barracks.train(UnitTypeId.MARAUDER)
 
     async def train_reapers(self):
         if (
@@ -186,34 +210,33 @@ class workerRushBotK(BotAI):
                 marine.attack(target)
                 print(f"Marine attacking {target}")
 
-            # Add Marauders, Siege Tanks, and Hellions to the attack
-            idle_marauders = self.units(UnitTypeId.MARAUDER).idle
-            if idle_marauders.amount > 0:
-                target = self.enemy_structures.random_or(
-                    self.enemy_start_locations[0]
-                ).position
-                for marauder in idle_marauders:
-                    marauder.attack(target)
-                    print(f"Marauder attacking {target}")
+        idle_marauders = self.units(UnitTypeId.MARAUDER).idle
+        if idle_marauders.amount > 5:
+            target = self.enemy_structures.random_or(
+                self.enemy_start_locations[0]
+            ).position
+            for marauder in idle_marauders:
+                marauder.attack(target)
+                print(f"Marauder attacking {target}")
 
-            # Přidání Siege Tanků do útoku
-            idle_siege_tanks = self.units(UnitTypeId.SIEGETANK).idle
-            if idle_siege_tanks.amount > 0:
-                target = self.enemy_structures.random_or(
-                    self.enemy_start_locations[0]
-                ).position
-                for siege_tank in idle_siege_tanks:
-                    siege_tank.attack(target)
-                    print(f"Siege Tank attacking {target}")
+        # Přidání Siege Tanků do útoku
+        idle_siege_tanks = self.units(UnitTypeId.SIEGETANK).idle
+        if idle_siege_tanks.amount > 0:
+            target = self.enemy_structures.random_or(
+                self.enemy_start_locations[0]
+            ).position
+            for siege_tank in idle_siege_tanks:
+                siege_tank.attack(target)
+                print(f"Siege Tank attacking {target}")
 
-            idle_hellions = self.units(UnitTypeId.HELLION).idle
-            if idle_hellions.amount > 0:
-                target = self.enemy_structures.random_or(
-                    self.enemy_start_locations[0]
-                ).position
-                for hellion in idle_hellions:
-                    hellion.attack(target)
-                    print(f"Hellion attacking {target}")
+        idle_hellions = self.units(UnitTypeId.HELLION).idle
+        if idle_hellions.amount > 0:
+            target = self.enemy_structures.random_or(
+                self.enemy_start_locations[0]
+            ).position
+            for hellion in idle_hellions:
+                hellion.attack(target)
+                print(f"Hellion attacking {target}")
 
 run_game(maps.get("sc2-ai-cup-2022"), [
     Bot(Race.Terran, workerRushBotK()),
