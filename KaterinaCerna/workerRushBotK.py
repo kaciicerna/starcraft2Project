@@ -4,7 +4,6 @@ from sc2.main import run_game
 from sc2.data import Race, Difficulty
 from sc2.bot_ai import BotAI
 from sc2.bot_ai import BotAI, Race
-from sc2.data import Result
 from sc2.ids.unit_typeid import UnitTypeId
 
 class workerRushBotK(BotAI):
@@ -12,14 +11,19 @@ class workerRushBotK(BotAI):
     RACE: Race = Race.Terran
 
     async def on_step(self, iteration: int):
+
         # Jestliže mám Command Center
         if self.townhalls:
             # První Command Center
             command_center = self.townhalls[0]
+            # Výstup do konzole o počtu SCV
+            # print(f"SCV count: {self.workers.amount}")
+
             # Trénování SCV
             # Bot trénuje nová SCV, jestliže je jich méně než 17
             if self.can_afford(UnitTypeId.SCV) and self.supply_workers <= 16 and command_center.is_idle:
                 command_center.train(UnitTypeId.SCV)
+
             # Postav Supply Depot, jestliže zbývá méně než 6 supply a je využito více než 13
             if self.supply_left < 6 and self.supply_used >= 14 and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
                 if self.can_afford(UnitTypeId.SUPPLYDEPOT):
@@ -48,6 +52,7 @@ class workerRushBotK(BotAI):
                         await self.build(
                             UnitTypeId.BARRACKS,
                             near=command_center.position.towards(self.game_info.map_center, 8))
+                        print("Barracks under construction!")
 
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 # Je jich méně než 6 nebo se již nějaké nestaví
@@ -56,6 +61,7 @@ class workerRushBotK(BotAI):
                         await self.build(
                             UnitTypeId.FACTORY,
                             near=command_center.position.towards(self.game_info.map_center, 8))
+                        print("Factory under construction!")
 
             # Trénování jednotky Marine
             # Pouze, má-li bot postavené Barracks a může si jednotku dovolit
@@ -81,10 +87,21 @@ class workerRushBotK(BotAI):
                     for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
                         starport.train(UnitTypeId.VIKING)
 
-                # Add Medivac production for support and ground transport
-                if self.can_afford(UnitTypeId.MEDIVAC):
-                    for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+            # Add Medivac production for support and ground transport
+            if self.structures(UnitTypeId.STARPORT).ready:
+                for starport in self.structures(UnitTypeId.STARPORT).ready.idle:
+                    if starport.add_on_tag in self.state.tags and self.can_afford(UnitTypeId.MEDIVAC) and starport.is_idle:
                         starport.train(UnitTypeId.MEDIVAC)
+                        print("Training Medivac!")
+                    elif starport.add_on_tag not in self.state.tags:
+                        print("Starport does not have Tech Lab!")
+                    elif not self.can_afford(UnitTypeId.MEDIVAC):
+                        print("Not enough resources to train Medivac!")
+                    elif not starport.is_idle:
+                        print("Starport is not idle!")
+                    else:
+                        print("Conditions for training Medivac not met!")
+
 
             # Útok s jednotkou Marine
             # Má-li bot více než 15 volných jednotek Marine, zaútočí na náhodnou nepřátelskou budovu nebo se přesune na jeho startovní pozici
@@ -94,12 +111,17 @@ class workerRushBotK(BotAI):
                     self.enemy_start_locations[0]).position
                 for marine in idle_marines:
                     marine.attack(target)
+                    print(f"Marine attacking {target}")
             # Zbylý SCV bot pošle těžit minerály nejblíže Command Center
             for scv in self.workers.idle:
                 if self.idle_worker_count > 7:
-                    scv.gather(self.mineral_field.closest_to(command_center))
+                    mineral_field = self.mineral_field.closest_to(command_center)
+                    scv.gather(mineral_field)
+                    #print(f"SCV gathering minerals at {mineral_field.position}")
                 else:
-                    scv.gather(self.vespene_geyser.closest_to(command_center))
+                    vespene_geyser = self.vespene_geyser.closest_to(command_center)
+                    scv.gather(vespene_geyser)
+                    #print(f"SCV gathering gas at {vespene_geyser.position}")
 
         # Útoková strategie s kombinací jednotek Marine, Marauder, Hellion a Siege Tank
         if (
@@ -107,7 +129,7 @@ class workerRushBotK(BotAI):
             and self.units(UnitTypeId.MARAUDER).amount > 2
             and self.units(UnitTypeId.HELLION).amount > 2
             and self.units(UnitTypeId.SIEGETANK).amount > 1
-            and self.units(UnitTypeId.VIKING).amount > 1 
+            and self.units(UnitTypeId.VIKING).amount > 1
             and self.units(UnitTypeId.MEDIVAC).amount > 1
         ):
             enemy_base = self.enemy_start_locations[0]
@@ -124,8 +146,9 @@ class workerRushBotK(BotAI):
             # Posun skupiny k nepřátelské základně
             for unit in attack_group:
                 unit.attack(enemy_base)
+                print(f"Attacking enemy base with {unit.type_id}")
 
 run_game(maps.get("sc2-ai-cup-2022"), [
     Bot(Race.Terran, workerRushBotK()),
-    Computer(Race.Terran, Difficulty.Hard)
+    Computer(Race.Terran, Difficulty.Medium)
 ], realtime=False)
