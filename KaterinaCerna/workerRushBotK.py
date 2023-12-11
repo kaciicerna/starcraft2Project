@@ -29,11 +29,13 @@ class workerRushBotK(BotAI):
         if self.townhalls.ready:
             command_center = self.townhalls.ready.random
             if (
-                self.can_afford(UnitTypeId.SCV)
+                command_center
+                and self.can_afford(UnitTypeId.SCV)
                 and self.supply_workers <= 16
                 and command_center.is_idle
             ):
                 command_center.train(UnitTypeId.SCV)
+
 
     async def build_supply_depots(self):
         if (
@@ -72,9 +74,10 @@ class workerRushBotK(BotAI):
             self.tech_requirement_progress(UnitTypeId.BARRACKS) == 1
             and self.structures(UnitTypeId.BARRACKS).amount < 6
         ):
-            command_center = self.townhalls.ready.random
+            command_center = self.townhalls.ready.random if self.townhalls.ready else None
             if (
-                self.can_afford(UnitTypeId.BARRACKS)
+                command_center
+                and self.can_afford(UnitTypeId.BARRACKS)
                 and not self.already_pending(UnitTypeId.BARRACKS)
             ):
                 await self.build(
@@ -85,30 +88,28 @@ class workerRushBotK(BotAI):
                 )
                 print("Barracks under construction!")
 
-        # Přidávání Tech Labu na Barracks
-        if self.tech_requirement_progress(UnitTypeId.BARRACKSTECHLAB) == 1:
-            idle_barracks = self.structures(UnitTypeId.BARRACKS).ready.idle
-            for barracks in idle_barracks:
-                if barracks.add_on_tag == 0:
-                    # Kontrola, zda si můžete dovolit stavbu Tech Labu
-                    if self.can_afford(UnitTypeId.BARRACKSTECHLAB):
-                        barracks.build(UnitTypeId.BARRACKSTECHLAB)
-                        print("Tech Lab under construction on Barracks")
-                        break
-
-            else:
-                if (
-                    self.can_afford(UnitTypeId.BARRACKS)
-                    and not self.already_pending(UnitTypeId.BARRACKS)
-                ):
-                    await self.build(
-                        UnitTypeId.BARRACKS,
-                        near=command_center.position.towards(
-                            self.game_info.map_center, 8
-                        ),
-                    )
-                    print("Barracks under construction!")
-
+            # Přidávání Tech Labu na Barracks
+            if self.tech_requirement_progress(UnitTypeId.BARRACKSTECHLAB) == 1:
+                idle_barracks = self.structures(UnitTypeId.BARRACKS).ready.idle
+                for barracks in idle_barracks:
+                    if barracks.add_on_tag == 0:
+                        # Kontrola, zda si můžete dovolit stavbu Tech Labu
+                        if self.can_afford(UnitTypeId.BARRACKSTECHLAB):
+                            barracks.build(UnitTypeId.BARRACKSTECHLAB)
+                            print("Tech Lab under construction on Barracks")
+                            break
+                else:
+                    if (
+                        self.can_afford(UnitTypeId.BARRACKS)
+                        and not self.already_pending(UnitTypeId.BARRACKS)
+                    ):
+                        await self.build(
+                            UnitTypeId.BARRACKS,
+                            near=command_center.position.towards(
+                                self.game_info.map_center, 8
+                            ),
+                        )
+                        print("Barracks under construction!")
 
     async def build_factory(self):
         if (
