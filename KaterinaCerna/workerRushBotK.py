@@ -203,6 +203,7 @@ class workerRushBotK(BotAI):
                     print("Conditions for training Medivac not met!")
 
     async def attack(self):
+        # Přidání Marines do útoku
         idle_marines = self.units(UnitTypeId.MARINE).idle
         if idle_marines.amount > 15:
             target = self.enemy_structures.random_or(
@@ -212,6 +213,7 @@ class workerRushBotK(BotAI):
                 marine.attack(target)
                 print(f"Marine attacking {target}")
 
+        # Přidání Marauders do útoku
         idle_marauders = self.units(UnitTypeId.MARAUDER).idle
         if idle_marauders.amount > 1:
             target = self.enemy_structures.random_or(
@@ -231,6 +233,7 @@ class workerRushBotK(BotAI):
                 siege_tank.attack(target)
                 print(f"Siege Tank attacking {target}")
 
+        # PřidáníHellions do útoku
         idle_hellions = self.units(UnitTypeId.HELLION).idle
         if idle_hellions.amount > 1:
             target = self.enemy_structures.random_or(
