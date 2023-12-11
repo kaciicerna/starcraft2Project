@@ -3,7 +3,7 @@ from sc2.player import Bot, Computer
 from sc2.main import run_game
 from sc2.data import Race, Difficulty
 
-from team_name.workerRushBotK import WorkerRushBot
+from KaterinaCerna.workerRushBotK import WorkerRushBot
 
 run_game(maps.get("sc2-ai-cup-2022"), [
     Bot(Race.Terran, WorkerRushBot()),
